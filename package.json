@@ -1,6 +1,6 @@
 {
     "name": "vue-mock-vars",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "一个在vue中mock变量的插件，用于在vue文件中使用生成动态的mock数据。",
     "type": "module",
     "author": {
