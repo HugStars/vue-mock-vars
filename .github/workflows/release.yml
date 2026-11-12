@@ -1,4 +1,4 @@
-name: Release
+name: 发布
 
 on:
   push:
@@ -11,29 +11,30 @@ concurrency:
 
 jobs:
   publish:
+    name: 发布到 npm
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: 检出代码
+        uses: actions/checkout@v7
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: 配置 Node
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
 
-      - name: Check tag matches version
+      - name: 校验 tag 与版本
         run: |
           node -e "const v = require('./package.json').version; if ('v' + v !== process.env.GITHUB_REF_NAME) { console.error('tag ' + process.env.GITHUB_REF_NAME + ' 与 package.json 版本 ' + v + ' 不一致'); process.exit(1) }"
 
-      - name: Test
+      - name: 运行测试
         run: npm test
 
-      - name: Check published version
+      - name: 检查版本是否已发布
         id: published
         run: |
           if npm view vue-mock-vars@${GITHUB_REF_NAME#v} version >/dev/null 2>&1; then
@@ -42,7 +43,7 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Publish
+      - name: 发布到 npm
         if: steps.published.outputs.exists != 'true'
         run: npm publish
         env:
