@@ -30,9 +30,6 @@ jobs:
         run: |
           node -e "const v = require('./package.json').version; if ('v' + v !== process.env.GITHUB_REF_NAME) { console.error('tag ' + process.env.GITHUB_REF_NAME + ' 与 package.json 版本 ' + v + ' 不一致'); process.exit(1) }"
 
-      - name: Install
-        run: npm install
-
       - name: Test
         run: npm test
 
