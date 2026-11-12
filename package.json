@@ -17,7 +17,8 @@
         "LICENSE"
     ],
     "scripts": {
-        "test": "node --test"
+        "test": "node --test",
+        "version:bump": "node scripts/version.mjs"
     },
     "keywords": [
         "vite",

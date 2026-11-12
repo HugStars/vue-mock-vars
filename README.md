@@ -379,6 +379,22 @@ npm install
 npm test
 ```
 
+---
+
+## 发布
+
+```bash
+# 递增版本并自动提交、打 tag
+npm run version:bump patch   # 或 minor / major
+
+# 推送提交和 tag，触发 GitHub Actions 自动发布
+git push --follow-tags
+```
+
+`version:bump` 要求工作区干净，会修改 `package.json`、提交并创建 `vX.Y.Z` tag。
+
+仓库需要在 **Settings → Secrets and variables → Actions** 中配置 `NPM_TOKEN`，workflow 用它在 tag 推送后发布到 npm。如果该版本已经存在，发布步骤会自动跳过。
+
 ## License
 
 MIT © 2026 HugStars
