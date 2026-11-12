@@ -381,19 +381,58 @@ npm test
 
 ---
 
+## 提交约定
+
+```text
+<emoji> <type>: <中文描述>
+```
+
+| 类型 | Emoji | 说明 |
+| --- | --- | --- |
+| feat | ✨ | 新功能 |
+| fix | 🐛 | 修复 bug |
+| docs | 📝 | 文档 |
+| style | 🎨 | 格式调整 |
+| refactor | ♻️ | 重构 |
+| test | ✅ | 测试 |
+| chore | 🔧 | 配置 / 工具 |
+| perf | ⚡️ | 性能优化 |
+| ci | 👷 | CI 配置 |
+| revert | ⏪️ | 回滚 |
+
+- 描述用中文、动词开头，结尾不加句号
+- 一个提交只做一类事情
+
+---
+
 ## 发布
 
+### 发布步骤
+
 ```bash
-# 递增版本并自动提交、打 tag
+# 1. 确认工作区干净且测试通过
+npm test
+
+# 2. 递增版本，自动提交并创建 vX.Y.Z tag
 npm run version:bump patch   # 或 minor / major
 
-# 推送提交和 tag，触发 GitHub Actions 自动发布
+# 3. 先推送分支，确保默认分支已有最新 workflow
+git push
+
+# 4. 再推送 tag，触发 GitHub Actions 自动发布
 git push --follow-tags
 ```
 
-`version:bump` 要求工作区干净，会修改 `package.json`、提交并创建 `vX.Y.Z` tag。
+### 注意项
 
-仓库需要在 **Settings → Secrets and variables → Actions** 中配置 `NPM_TOKEN`，workflow 用它在 tag 推送后发布到 npm。如果该版本已经存在，发布步骤会自动跳过。
+- `version:bump` 要求工作区干净，会修改 `package.json`、提交并创建 `vX.Y.Z` tag
+- 必须先 `git push` 分支，再 `git push --follow-tags`；tag 先到、workflow 后到时 GitHub 不会触发发布
+- 仓库需要在 **Settings → Secrets and variables → Actions** 配置 `NPM_TOKEN`
+- workflow 会校验 tag 与 `package.json` 版本一致，不一致会直接失败
+- 该版本已经存在于 npm 时，发布步骤会自动跳过
+- npm 发布后 registry 传播可能需要几分钟，用 `npm view vue-mock-vars version` 确认
+- 不要同时在本地执行 `npm publish`，避免和 CI 重复发布同一版本
+- 发布后确认 <https://www.npmjs.com/package/vue-mock-vars> 的版本和文件列表
 
 ## License
 
