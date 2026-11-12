@@ -14,6 +14,8 @@ import vueMockVars from '../index.js'
  */
 function createProject(files) {
     const root = mkdtempSync(join(tmpdir(), 'vue-mock-vars-'))
+    // 临时项目按 ESM 处理，Node 18 也能直接导入 .js mock 文件
+    writeFileSync(join(root, 'package.json'), JSON.stringify({ type: 'module' }))
     for (const [path, content] of Object.entries(files)) {
         const full = join(root, path)
         mkdirSync(dirname(full), { recursive: true })
