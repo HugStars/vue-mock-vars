@@ -1,25 +1,33 @@
 # vue-mock-vars
 
-[![Vite](https://img.shields.io/badge/Vite-4%2B-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
-[![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js&logoColor=white)](https://vuejs.org/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Node](https://img.shields.io/badge/Node-18%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+<p align="center">
+    <a href="https://www.npmjs.com/package/vue-mock-vars"><img src="https://img.shields.io/npm/v/vue-mock-vars" alt="npm version"></a>
+    <a href="https://www.npmjs.com/package/vue-mock-vars"><img src="https://img.shields.io/npm/dt/vue-mock-vars" alt="npm total downloads"></a>
+    <br>
+    <a href="./LICENSE"><img src="https://img.shields.io/npm/l/vue-mock-vars" alt="license"></a>
+    <a href="./package.json"><img src="https://img.shields.io/badge/dependencies-0-brightgreen" alt="dependencies"></a>
+    <br>
+    <a href="https://nodejs.org"><img src="https://img.shields.io/badge/Node-18%2B-339933?logo=node.js&amp;logoColor=white" alt="Node 18+"></a>
+    <a href="https://vite.dev"><img src="https://img.shields.io/badge/Vite-4--8-646cff?logo=vite&amp;logoColor=white" alt="Vite 4-8"></a>
+    <a href="https://vuejs.org"><img src="https://img.shields.io/badge/Vue-3-42b883?logo=vue.js&amp;logoColor=white" alt="Vue 3"></a>
+    <a href="https://developer.mozilla.org/docs/Web/JavaScript/Guide/Modules"><img src="https://img.shields.io/badge/module-ESM-f7df1e?logo=javascript&amp;logoColor=black" alt="ESM"></a>
+</p>
 
 一个 Vite 插件，用于在 **开发/构建时** 将 Vue 组件中 `ref` / `reactive` 的初始值**自动替换为动态生成的 Mock 数据**。
 
-数据在 Node 端生成、直接注入编译后的源码，浏览器零打包体积、零运行时开销。
+数据在 Node 端生成、直接注入 Vue 源码，浏览器零打包体积、零运行时开销。
 
 ---
 
 ## 特性
 
 - ⚡ **零运行时开销** — Mock 数据在 Vite `transform` 阶段生成并注入源码，浏览器端不打包任何数据
-- 🎲 **动态随机** — 每次重启 dev server 重新随机生成，数据不固定
-- 🗂️ **自动路径映射** — mock 数据目录镜像 `src/` 结构，插件自动匹配，无需配置映射表
+- 🎲 **动态随机** — 运行时按需生成，单次会话内保持稳定，重启后重新生成
+- 🗂️ **自动路径映射** — mock 数据目录镜像 `srcDir` 结构，插件自动匹配，无需配置映射表
 - 🪶 **零外部依赖** — 不依赖 mockjs / faker / chance 等第三方库
 - 🔄 **支持 ref 和 reactive** — 两种声明方式均可处理
 - ⏱️ **支持异步生成** — 生成函数可以返回 Promise
-- 🔧 **完全可配置** — mockDir、enable 全部可选
+- 🔧 **完全可配置** — mockDir、srcDir、enable、logger 全部可选
 
 ---
 
@@ -70,9 +78,11 @@ export default defineConfig(({ mode }) => ({
     plugins: [
         vue(),
         VueMockVars({
-            // mock 数据根目录，文件层级根据项目的 src/ 来
+            // mock 数据根目录，文件层级根据 srcDir 来
             // 文件夹位置可自定义
             mockDir: 'plugin/mock_vars',
+            // Vue 源码根目录，mock 文件的目录结构对应这里
+            srcDir: 'src',
             // 布尔值  仅在开发环境使用
             enable: mode === 'development'
         }) 
@@ -84,7 +94,7 @@ export default defineConfig(({ mode }) => ({
 
 ### 2. 创建 Mock 数据文件
 
-在 `plugin/mock_vars/` 目录下，**按 `src/` 的镜像结构**创建 `.js` 文件。
+在 `plugin/mock_vars/` 目录下，**按 `srcDir` 的镜像结构**创建 `.js` 文件。
 
 **完整目录结构示例：**
 
@@ -105,7 +115,7 @@ your-project/
 ```
 
 > **路径映射规则很简单**：`plugin/mock_vars/views/TaskManagement/index.js` → `src/views/TaskManagement/index.vue`。
-> mockDir 下的目录结构直接镜像 `src` 下的目录结构，去掉 `.js` 改为 `.vue` 即为目标文件。
+> mockDir 下的目录结构直接镜像 `srcDir` 下的目录结构，去掉 `.js` 改为 `.vue` 即为目标文件。`srcDir` 默认是 `src`，可以按项目结构调整。
 
 **`plugin/mock_vars/views/TaskManagement/index.js`：**
 
@@ -174,7 +184,7 @@ const tableTotal = ref(0)
 **匹配规则：**
 1. 取 mock 文件相对 `mockDir` 的路径（如 `views/TaskManagement/index`）
 2. 将扩展名 `.js` / `.ts` 替换为 `.vue`
-3. 前面加 `src/` 即为目标 Vue 组件路径
+3. 前面加上 `srcDir`（默认 `src/`）即为目标 Vue 组件路径
 
 ### 生成函数命名
 
@@ -224,10 +234,12 @@ export function badData() {
 
 ### `VueMockVars(options?)`
 
-| 参数      | 类型      | 默认值               | 说明                                        |
-| --------- | --------- | -------------------- | ------------------------------------------- |
-| `mockDir` | `string`  | `'plugin/mock_vars'` | Mock 数据生成函数的根目录，相对于项目根目录 |
-| `enable`  | `boolean` | `true`               | 是否启用插件。可用于环境判断                |
+| 参数      | 类型      | 默认值               | 说明                                         |
+| --------- | --------- | -------------------- | -------------------------------------------- |
+| `mockDir` | `string`  | `'plugin/mock_vars'` | Mock 数据生成函数的根目录，相对于项目根目录  |
+| `srcDir`  | `string`  | `'src'`              | Vue 源码根目录，mock 文件的目录结构对应这里  |
+| `enable`  | `boolean` | `true`               | 是否启用插件。可用于环境判断                 |
+| `logger`  | `boolean` | `true`               | 是否输出插件日志，警告信息始终输出           |
 
 ### 两种关闭插件的方式
 
@@ -250,12 +262,14 @@ VueMockVars({
 
 ## 工作原理
 
-1. Vite 启动时，`configResolved` 钩子扫描 `mockDir` 下所有 `.js` / `.ts` 文件
+1. Vite 启动时，`configResolved` 钩子扫描 `mockDir` 下所有 `.js` / `.mjs` / `.ts` 文件
 2. 使用 ESM `import()` 动态导入每个文件，收集所有**命名导出的函数**
-3. 建立 `相对路径 → { 函数名: 函数 }` 的索引 Map
-4. 每当 Vite transform 一个 `.vue` 文件时，正则匹配 `const|let X = ref|reactive(...)` 声明
-5. 如果变量名 `X` 在索引中有对应生成函数，**调用该函数**，将返回值 `JSON.stringify` 后替换 ref 初始值
+3. 缓存每个文件的导出函数，再汇总成 `相对路径 → { 函数名: 函数 }` 的索引 Map
+4. 每当 Vite transform 一个 `.vue` 文件时，只扫描 `<script>` / `<script setup>` 块，定位 `const|let X = ref|reactive(...)` 声明（支持 `ref<T>()` 泛型）
+5. 如果变量名 `X` 在索引中有对应生成函数，**调用该函数**（支持返回 Promise），将返回值 `JSON.stringify` 后注入 ref 初始值
 6. 替换在**源码层面**完成，浏览器端拿到的是已含数据的 ref，无任何运行时开销
+
+> mock 文件变化时只重新导入变更的文件，再基于文件缓存重建索引，不会重新加载整个 `mockDir`。同一组件内的多个异步生成函数会并行执行，生成函数之间应保持相互独立。
 
 ---
 
@@ -280,7 +294,7 @@ VueMockVars({ mockDir: 'test-data' })
 VueMockVars({ mockDir: 'packages/shared/mock' })
 ```
 
-只要 mockDir 下的内部结构镜像 `src/` 即可。
+只要 mockDir 下的内部结构镜像 `srcDir` 即可。
 
 ### Q: 生成函数可以是异步的吗？
 
@@ -301,7 +315,10 @@ export async function tableData() {
 
 ### Q: 支持 TypeScript 吗？
 
-支持。生成函数可以写在 `.ts` 文件中（使用 `export function` 语法）。
+分两部分：
+
+- **Vue 组件里**的 `ref<T>()`、`reactive<T>()` 泛型写法支持。
+- **mock 文件**可以写成 `.ts`，但依赖 Node 原生导入 `.ts` 的能力：需要 Node 23.6+，或 Node 22.6+ 并开启 `--experimental-strip-types`。Node 18/20 请把 mock 文件写成 `.js` / `.mjs`，否则控制台会给出明确警告。
 
 ### Q: ref 的初始值必须是空数组吗？
 
@@ -321,23 +338,30 @@ const data = ref({ list: [] }) // ✅ 可以
 
 可以。`const obj = reactive({})` 会被替换为 `const obj = reactive({ key: 'value', ... })`。
 
-### Q: 控制台没有看到 `Loaded X mock file(s)` 日志？
+### Q: 修改 mock 文件后需要重启 dev server 吗？
+
+不需要。插件监听 `mockDir`，文件变化后只重新加载变更的文件并刷新页面。生成结果按组件变量缓存，同一会话内保持稳定，修改 mock 文件或重启 dev server 后重新生成。
+
+如果修改的是被多个 mock 文件共享的工具模块（例如 `mock/utils.js`），受 Node ESM 缓存影响，建议重启 dev server。
+
+### Q: 控制台没有看到加载日志？
 
 检查：
 1. `mockDir` 路径是否正确（相对于项目根目录）
-2. mock 数据文件的内部结构是否镜像 `src/`
+2. mock 数据文件的内部结构是否镜像 `srcDir`
 3. 开发服务器是否已重启（修改配置后需重启）
 
-### Q: 看到 `Failed to load xxx.js` 警告？
+### Q: 看到 `无法加载 xxx.js` 警告？
 
-通常是 import 路径错误。mock 文件使用相对路径导入工具库时，需要从文件位置回溯到 mockDir 根目录。检查 `../../utils.js` 的层级是否正确。
+通常是 import 路径错误。mock 文件使用相对路径导入工具库时，需要从文件位置回溯到 mockDir 根目录。检查 `../../utils.js` 的层级是否正确。如果是 `.ts` 文件，还要确认当前 Node 版本支持直接导入 TypeScript。
 
 ### Q: 页面上还是空数据，没有被注入？
 
 检查：
 1. Vue 组件中 ref 的变量名与 mock 导出的函数名**完全一致**
 2. 组件文件路径与 mock 文件路径**镜像对应**（不含扩展名）
-3. ref 使用的是 `ref()` 还是 `reactive()`（插件都支持）
+3. `srcDir` 是否指向 Vue 源码根目录
+4. ref 使用的是 `ref()` 还是 `reactive()`（插件都支持）
 
 ---
 
@@ -353,9 +377,6 @@ npm install
 
 # 运行测试
 npm test
-
-# 构建
-npm run build
 ```
 
 ## License
